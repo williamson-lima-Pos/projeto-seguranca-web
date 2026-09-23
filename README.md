@@ -147,3 +147,112 @@ Entre os principais controles adotados estão:
 
 - **Dependabot Malware Alerts:** habilitado para auxiliar na identificação de
   pacotes associados a ameaças ou comportamento malicioso.
+
+## Autenticação SSH e Gerenciamento das Chaves
+
+As operações de autenticação entre os ambientes locais de desenvolvimento e o
+GitHub são realizadas por meio do protocolo SSH, utilizando chaves
+criptográficas Ed25519.
+
+Foi adotado um par de chaves SSH independente para cada equipamento utilizado
+no desenvolvimento do projeto. Dessa forma, as chaves privadas não são
+compartilhadas ou transferidas entre dispositivos.
+
+Atualmente são utilizados dois ambientes de desenvolvimento:
+
+- **Notebook de trabalho:** possui seu próprio par de chaves SSH Ed25519;
+- **Computador pessoal:** possui outro par de chaves SSH Ed25519 independente.
+
+As chaves privadas são mantidas exclusivamente nos respectivos dispositivos e
+protegidas por passphrase. Somente as chaves públicas correspondentes foram
+cadastradas na conta GitHub.
+
+Essa estratégia permite que uma chave seja revogada individualmente em caso de
+perda, comprometimento ou desativação de um equipamento, sem necessidade de
+substituir as credenciais utilizadas nos demais dispositivos.
+
+A autenticação SSH foi validada nos dois ambientes por meio de conexão com o
+GitHub, confirmando o funcionamento das respectivas chaves.
+
+## Proteção de Informações Sensíveis
+
+Como o repositório do projeto é público, foram adotadas medidas para evitar o
+versionamento e a publicação acidental de credenciais, chaves privadas, dados
+locais e outros arquivos que possam representar risco de segurança.
+
+O arquivo `.gitignore` foi configurado para impedir o versionamento de
+categorias de arquivos que não devem ser armazenadas no repositório, incluindo:
+
+- arquivos de variáveis de ambiente, como `.env`;
+- ambientes virtuais Python, como `.venv/` e `venv/`;
+- bancos de dados locais, como arquivos `.db`, `.sqlite` e `.sqlite3`;
+- chaves privadas e certificados, incluindo arquivos `.pem`, `.key`, `.p12`
+  e `.pfx`;
+- chaves SSH privadas, como `id_rsa` e `id_ed25519`;
+- arquivos relacionados a credenciais da Oracle Cloud Infrastructure;
+- arquivos de log;
+- arquivos temporários, caches e artefatos gerados pelo sistema operacional
+  ou pelo editor.
+
+O `.gitignore` atua de forma preventiva sobre arquivos ainda não versionados.
+Ele não remove nem protege arquivos que já tenham sido adicionados ao histórico
+do Git. Por esse motivo, credenciais, senhas, chaves privadas e outros segredos
+não devem ser inseridos no repositório em nenhuma etapa do desenvolvimento.
+
+Como camada adicional de proteção, o repositório utiliza os recursos
+**Secret Scanning** e **Push Protection** do GitHub para auxiliar na detecção e
+no bloqueio da publicação acidental de segredos.
+
+## Ambiente Python e Gerenciamento de Dependências
+
+O desenvolvimento da aplicação utiliza **Python 3.13** e um ambiente virtual
+Python (`venv`) para isolar as dependências do projeto das demais instalações
+existentes no sistema operacional.
+
+O diretório `.venv/` não é armazenado no repositório, pois contém arquivos
+específicos do ambiente local e pode ser reconstruído quando necessário.
+
+As dependências Python utilizadas pelo projeto são registradas no arquivo
+`requirements.txt`, permitindo que o ambiente seja reproduzido em outro
+equipamento sem a necessidade de versionar o ambiente virtual.
+
+A reprodutibilidade foi validada utilizando dois ambientes independentes. O
+repositório foi clonado em outro computador, uma nova `.venv` foi criada
+localmente e as dependências foram instaladas a partir do `requirements.txt`.
+
+Para instalar as dependências em um ambiente virtual previamente criado e
+ativado, utiliza-se:
+
+    python -m pip install -r requirements.txt
+
+Esse procedimento confirmou a instalação das mesmas dependências registradas
+no projeto, incluindo o **Flask 3.1.3**, demonstrando que o ambiente de
+desenvolvimento pode ser reconstruído a partir dos arquivos versionados no
+repositório.
+
+## Obtenção e Preparação do Projeto
+
+O código-fonte é mantido em um repositório público no GitHub e pode ser
+obtido utilizando o Git por meio de conexão HTTPS ou SSH.
+
+Nos ambientes utilizados durante o desenvolvimento, foi adotada a autenticação
+por SSH.
+
+Após o clone do repositório, o ambiente local pode ser preparado com a criação
+de um ambiente virtual Python e a instalação das dependências registradas no
+projeto.
+
+Exemplo de preparação utilizando PowerShell:
+
+    git clone git@github.com:williamson-lima-Pos/projeto-seguranca-web.git
+    cd projeto-seguranca-web
+    python -m venv .venv
+    .\.venv\Scripts\Activate.ps1
+    python -m pip install -r requirements.txt
+
+A ativação do ambiente virtual pode depender da política de execução de scripts
+configurada no PowerShell. Essa política deve ser avaliada conforme as regras
+de segurança do equipamento utilizado.
+
+As credenciais e configurações sensíveis necessárias à execução da aplicação
+não deverão ser armazenadas diretamente no código-fonte ou no repositório.
