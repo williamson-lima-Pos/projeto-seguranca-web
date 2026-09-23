@@ -1,0 +1,84 @@
+# =============================================================================
+# .gitignore - Projeto de Segurança Web
+# =============================================================================
+#
+# Finalidade:
+# Impedir o versionamento e a publicação acidental de arquivos que contenham
+# informações sensíveis, credenciais, segredos, dados locais ou artefatos
+# desnecessários ao código-fonte da aplicação.
+#
+# Este arquivo integra os controles de segurança do projeto, reduzindo o risco
+# de exposição de informações sensíveis no repositório público do GitHub.
+#
+# ATENÇÃO:
+# O .gitignore não protege arquivos que já tenham sido adicionados ao histórico
+# do Git. Credenciais e segredos nunca devem ser incluídos em commits.
+#
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# Variáveis de ambiente e segredos
+# -----------------------------------------------------------------------------
+.env
+
+# -----------------------------------------------------------------------------
+# Ambiente virtual Python
+# -----------------------------------------------------------------------------
+.venv/
+venv/
+
+# -----------------------------------------------------------------------------
+# Cache e arquivos compilados do Python
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+
+# -----------------------------------------------------------------------------
+# Bancos de dados locais
+# -----------------------------------------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+
+# -----------------------------------------------------------------------------
+# Chaves privadas e certificados
+# -----------------------------------------------------------------------------
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+
+# -----------------------------------------------------------------------------
+# Credenciais e configurações de Cloud
+# -----------------------------------------------------------------------------
+.oci/
+oci_api_key.pem
+
+# -----------------------------------------------------------------------------
+# Logs da aplicação
+# Esses logs podem conter informações do ambiente de execução e crescer
+# continuamente, portanto não devem fazer parte do código versionado.
+# Os logs devem ser mantidos nos respectivos ambientes de execução conforme
+# a política de retenção definida, para fins de auditoria, diagnóstico
+# e segurança.
+# -----------------------------------------------------------------------------
+*.log
+logs/
+
+# -----------------------------------------------------------------------------
+# Arquivos temporários e configurações locais de ferramentas
+# Arquivos gerados pelo sistema operacional, editor ou ferramentas de
+# desenvolvimento não fazem parte do código-fonte da aplicação e não devem
+# ser incluídos no versionamento.
+# -----------------------------------------------------------------------------
+*.tmp
+*.temp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Sublime Text
+*.sublime-workspace
