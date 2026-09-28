@@ -1,6 +1,7 @@
 import os
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 
@@ -30,6 +31,39 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
+
+    @staticmethod
+    def validate_password(password: str) -> tuple[bool, str | None]:
+        """Valida a política de senha de acordo com requisitos mínimos de segurança."""
+        if not isinstance(password, str) or not password:
+            return False, "A senha é obrigatória."
+
+        if len(password) < 8:
+            return False, "A senha deve possuir no mínimo 8 caracteres."
+
+        if not any(c.islower() for c in password):
+            return False, "A senha deve conter pelo menos uma letra minúscula."
+
+        if not any(c.isupper() for c in password):
+            return False, "A senha deve conter pelo menos uma letra maiúscula."
+
+        if not any(c.isdigit() for c in password):
+            return False, "A senha deve conter pelo menos um número."
+
+        return True, None
+
+    def set_password(self, password: str) -> None:
+        """Valida a política de senha e armazena exclusivamente o hash criptográfico."""
+        is_valid, error_message = self.validate_password(password)
+        if not is_valid:
+            raise ValueError(error_message)
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password: str) -> bool:
+        """Verifica se a senha fornecida corresponde ao hash armazenado."""
+        if not self.password_hash or not password:
+            return False
+        return check_password_hash(self.password_hash, password)
 
     def __repr__(self):
         return f"<User {self.username}>"
