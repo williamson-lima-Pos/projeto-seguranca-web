@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área Privada - Projeto Segurança Web</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="container">
+        <h1>Área Privada</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="user-card">
+            <div class="user-status-badge">Autenticado com Sucesso</div>
+            <div class="user-info-row">
+                <span class="info-label">Usuário:</span>
+                <span class="info-value">{{ user.username }}</span>
+            </div>
+            <div class="user-info-row">
+                <span class="info-label">ID da Conta:</span>
+                <span class="info-value">#{{ user.id }}</span>
+            </div>
+            <div class="user-info-row">
+                <span class="info-label">Estado da Sessão:</span>
+                <span class="info-value">Sessão autenticada</span>
+            </div>
+        </div>
+
+        <div class="actions">
+            <!-- Logout seguro via POST com CSRF -->
+            <form method="POST" action="{{ url_for('logout') }}" class="logout-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger">Encerrar Sessão (Logout)</button>
+            </form>
+        </div>
+
+        <div class="form-footer">
+            <a href="{{ url_for('index') }}" class="link-secondary">Página Inicial</a>
+        </div>
+    </main>
+</body>
+</html>

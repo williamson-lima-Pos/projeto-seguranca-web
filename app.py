@@ -1,8 +1,10 @@
+from datetime import timedelta
+from functools import wraps
 import hmac
 import os
 import re
 import secrets
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, flash, g, redirect, render_template, request, session, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -20,6 +22,19 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
     "DATABASE_URL", "sqlite:///app.db"
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+# Configurações de segurança dos cookies de sessão
+# HTTPOnly impede que scripts no cliente (XSS) acessem o cookie de sessão
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+
+# SameSite=Lax mitiga o envio inadvertido do cookie em requisições cross-site de terceiros
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+# Secure: False em ambiente local de desenvolvimento (HTTP) e True em produção (HTTPS)
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "0") == "1"
+
+# Tempo de expiração padrão para sessões configuradas como permanentes (session.permanent = True)
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(minutes=30)
 
 db = SQLAlchemy(app)
 
@@ -117,6 +132,32 @@ class User(db.Model):
         return f"<User {self.username}>"
 
 
+@app.before_request
+def load_logged_in_user():
+    """Carrega o usuário autenticado na requisição com base no user_id da sessão."""
+    user_id = session.get("user_id")
+    if user_id is None:
+        g.user = None
+    else:
+        g.user = db.session.get(User, user_id)
+        # Se o usuário não for mais encontrado no banco, descarta a sessão obsoleta
+        if g.user is None:
+            session.clear()
+
+
+def login_required(view):
+    """Decorador para proteger rotas que exigem autenticação prévia."""
+
+    @wraps(view)
+    def wrapped_view(**kwargs):
+        if g.user is None:
+            flash("Acesso restrito. Faça login para continuar.", "error")
+            return redirect(url_for("login"))
+        return view(**kwargs)
+
+    return wrapped_view
+
+
 @app.after_request
 def apply_security_headers(response):
     """Aplica cabeçalhos básicos de segurança nas respostas HTTP (Secure by Design)."""
@@ -135,6 +176,9 @@ def index():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     """Rota para cadastro de novos usuários com proteção CSRF e validações estritas."""
+    if g.user is not None:
+        return redirect(url_for("dashboard"))
+
     if request.method == "POST":
         # 1. Validação obrigatória do token CSRF em tempo constante
         csrf_token_received = request.form.get("csrf_token")
@@ -185,14 +229,88 @@ def register():
         try:
             db.session.add(new_user)
             db.session.commit()
-            flash("Cadastro realizado com sucesso!", "success")
-            return redirect(url_for("register"))
+            flash("Cadastro realizado com sucesso! Faça login para continuar.", "success")
+            return redirect(url_for("login"))
         except Exception:
             db.session.rollback()
             flash("Ocorreu um erro ao processar o cadastro. Tente novamente.", "error")
             return render_template("register.html"), 500
 
     return render_template("register.html")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """Rota para autenticação de usuários por username e senha com proteção CSRF."""
+    # Redireciona usuários já autenticados para a área privada
+    if g.user is not None:
+        return redirect(url_for("dashboard"))
+
+    if request.method == "POST":
+        # 1. Validação obrigatória do token CSRF em tempo constante
+        csrf_token_received = request.form.get("csrf_token")
+        if not validate_csrf_token(csrf_token_received):
+            flash("Requisição inválida ou token de segurança expirado.", "error")
+            return render_template("login.html"), 400
+
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
+        # 2. Validação básica de preenchimento dos campos obrigatórios
+        if not username or not password:
+            flash("Todos os campos são obrigatórios.", "error")
+            return render_template("login.html", username=username), 400
+
+        # 3. Consulta parametrizada por usuário existente (SQLAlchemy ORM)
+        user = db.session.execute(
+            db.select(User).filter_by(username=username)
+        ).scalar_one_or_none()
+
+        # 4. Verificação da senha utilizando o método check_password() do modelo.
+        # Não reaplica a política de complexidade da senha durante o login.
+        # Mensagem genérica para mitigar enumeração de contas (OWASP Authentication Cheat Sheet).
+        if user is None or not user.check_password(password):
+            flash("Usuário ou senha incorretos.", "error")
+            return render_template("login.html", username=username), 401
+
+        # 5. Eliminação do estado da sessão anterior antes de criar a sessão autenticada
+        session.clear()
+
+        # 6. Configuração explícita de sessão permanente com tempo de expiração configurado (30 min)
+        session.permanent = True
+
+        # 7. Armazenamento exclusivo do identificador essencial (nunca senha ou hash na sessão)
+        session["user_id"] = user.id
+
+        # 8. Geração de um novo token CSRF para o contexto da sessão autenticada
+        session["csrf_token"] = secrets.token_hex(32)
+
+        flash(f"Bem-vindo, {user.username}!", "success")
+        return redirect(url_for("dashboard"))
+
+    return render_template("login.html")
+
+
+@app.route("/logout", methods=["POST"])
+@login_required
+def logout():
+    """Rota para encerramento de sessão com proteção CSRF."""
+    csrf_token_received = request.form.get("csrf_token")
+    if not validate_csrf_token(csrf_token_received):
+        flash("Requisição inválida ou token de segurança expirado.", "error")
+        return redirect(url_for("login")), 400
+
+    # Limpeza total da sessão do usuário
+    session.clear()
+    flash("Sessão encerrada com sucesso.", "success")
+    return redirect(url_for("login"))
+
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    """Área privada acessível exclusivamente por usuários autenticados."""
+    return render_template("dashboard.html", user=g.user)
 
 
 if __name__ == "__main__":

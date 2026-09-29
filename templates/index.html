@@ -9,8 +9,30 @@
 <body>
     <main class="container">
         <h1>Projeto Segurança Web - Eixo 3</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
         <div class="actions">
-            <a href="{{ url_for('register') }}" class="btn btn-primary">Criar Conta</a>
+            {% if g.user %}
+                <div class="logged-banner">
+                    <p>Conectado como <strong>{{ g.user.username }}</strong></p>
+                </div>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Acessar Área Privada</a>
+                <form method="POST" action="{{ url_for('logout') }}" class="logout-form mt-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-secondary">Encerrar Sessão</button>
+                </form>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-primary">Entrar (Login)</a>
+                <a href="{{ url_for('register') }}" class="btn btn-secondary mt-2">Criar Conta</a>
+            {% endif %}
         </div>
     </main>
 </body>

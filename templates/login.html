@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cadastro de Usuário - Projeto Segurança Web</title>
+    <title>Login - Projeto Segurança Web</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <main class="container">
-        <h1>Cadastro de Usuário</h1>
+        <h1>Entrar na Conta</h1>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -20,30 +20,25 @@
             {% endif %}
         {% endwith %}
 
-        <form method="POST" action="{{ url_for('register') }}" class="auth-form" autocomplete="off">
+        <form method="POST" action="{{ url_for('login') }}" class="auth-form" autocomplete="off">
             <!-- Proteção CSRF com token criptograficamente seguro -->
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <div class="form-group">
                 <label for="username">Nome de usuário</label>
-                <input type="text" id="username" name="username" value="{{ username or '' }}" required minlength="3" maxlength="30">
+                <input type="text" id="username" name="username" value="{{ username or '' }}" required autocomplete="username">
             </div>
 
             <div class="form-group">
                 <label for="password">Senha</label>
-                <input type="password" id="password" name="password" required autocomplete="new-password">
+                <input type="password" id="password" name="password" required autocomplete="current-password">
             </div>
 
-            <div class="form-group">
-                <label for="confirm_password">Confirmar Senha</label>
-                <input type="password" id="confirm_password" name="confirm_password" required autocomplete="new-password">
-            </div>
-
-            <button type="submit" class="btn btn-primary">Cadastrar</button>
+            <button type="submit" class="btn btn-primary">Entrar</button>
         </form>
 
         <div class="form-footer">
-            <p class="footer-text">Já possui uma conta? <a href="{{ url_for('login') }}" class="link-accent">Entrar</a></p>
+            <p class="footer-text">Não possui uma conta? <a href="{{ url_for('register') }}" class="link-accent">Cadastre-se</a></p>
             <div class="mt-2">
                 <a href="{{ url_for('index') }}" class="link-secondary">Voltar para o início</a>
             </div>
