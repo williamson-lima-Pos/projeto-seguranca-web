@@ -31,12 +31,14 @@ body {
 }
 
 .container {
+    width: 100%;
+    max-width: 480px;
     background: var(--bg-surface);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--border-subtle);
     border-radius: 16px;
-    padding: 3rem 4rem;
+    padding: 2.5rem 2.5rem;
     box-shadow: 
         0 10px 30px -10px rgba(0, 0, 0, 0.6),
         0 0 40px -10px var(--accent-glow);
@@ -71,4 +73,117 @@ h1 {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* Ações e Botões */
+.actions {
+    margin-top: 2rem;
+}
+
+.btn {
+    display: inline-block;
+    width: 100%;
+    padding: 0.85rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0284c7, #38bdf8);
+    color: #0a0f1d;
+    box-shadow: 0 4px 14px rgba(56, 189, 248, 0.3);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0369a1, #0ea5e9);
+    box-shadow: 0 6px 20px rgba(56, 189, 248, 0.45);
+    transform: translateY(-1px);
+}
+
+/* Formulário de Autenticação */
+.auth-form {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    text-align: left;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #94a3b8;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: var(--text-primary);
+    background: rgba(10, 15, 29, 0.7);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    font-family: inherit;
+}
+
+.form-group input:focus {
+    border-color: var(--text-accent);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+}
+
+.form-footer {
+    margin-top: 1.5rem;
+}
+
+.link-secondary {
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: color 0.2s ease;
+}
+
+.link-secondary:hover {
+    color: var(--text-accent);
+}
+
+/* Mensagens de Alerta (Flash) */
+.flash-messages {
+    margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.alert {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-align: left;
+}
+
+.alert-error {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #fca5a5;
+}
+
+.alert-success {
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    color: #86efac;
 }
