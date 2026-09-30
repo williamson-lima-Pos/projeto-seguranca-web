@@ -1,0 +1,41 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy via SSH
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure SSH and known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "${{ vars.VM_HOST }} ${{ vars.VM_SSH_HOST_KEY }}" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Setup SSH Private Key
+        run: |
+          echo "${{ secrets.VM_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Execute Remote Deployment
+        run: |
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes "${{ vars.VM_USER }}@${{ vars.VM_HOST }}" << 'EOF'
+          set -e
+          cd /opt/projeto-seguranca-web
+          git fetch origin main
+          git reset --hard origin/main
+          .venv/bin/python -m pip install -r requirements.txt
+          sudo -n /usr/bin/systemctl restart projeto-seguranca-web.service
+          /usr/bin/systemctl is-active --quiet projeto-seguranca-web.service
+          EOF
+
+      - name: Cleanup SSH Key
+        if: always()
+        run: |
+          rm -f ~/.ssh/deploy_key
