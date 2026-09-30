@@ -37,8 +37,14 @@
         </div>
 
         <div class="actions">
+            {% if g.user.is_admin %}
+                <div class="admin-access-block">
+                    <a href="{{ url_for('admin') }}" class="btn btn-primary">Acessar Área Administrativa</a>
+                </div>
+            {% endif %}
+
             <!-- Logout seguro via POST com CSRF -->
-            <form method="POST" action="{{ url_for('logout') }}" class="logout-form">
+            <form method="POST" action="{{ url_for('logout') }}" class="logout-form mt-2">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn btn-danger">Encerrar Sessão (Logout)</button>
             </form>

@@ -4,7 +4,7 @@ import hmac
 import os
 import re
 import secrets
-from flask import Flask, flash, g, redirect, render_template, request, session, url_for
+from flask import Flask, abort, flash, g, redirect, render_template, request, session, url_for
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -153,6 +153,32 @@ def login_required(view):
         if g.user is None:
             flash("Acesso restrito. Faça login para continuar.", "error")
             return redirect(url_for("login"))
+        return view(**kwargs)
+
+    return wrapped_view
+
+
+def admin_required(view):
+    """Decorador para proteger rotas exclusivas para administradores.
+
+    Requisitos de segurança:
+    1. Exige autenticação prévia (redireciona para login se anônimo);
+    2. Exige privilégio administrativo ativo verificado no banco (is_admin=True);
+    3. Nega acesso com HTTP 403 Forbidden para usuários comuns autenticados.
+    """
+
+    @wraps(view)
+    def wrapped_view(**kwargs):
+        # 1. Usuário não autenticado: segue fluxo padrão de login
+        if g.user is None:
+            flash("Acesso restrito. Faça login para continuar.", "error")
+            return redirect(url_for("login"))
+
+        # 2. Usuário autenticado sem privilégio administrativo: nega acesso seguro
+        if not g.user.is_admin:
+            abort(403)
+
+        # 3. Usuário autenticado e com privilégio administrativo
         return view(**kwargs)
 
     return wrapped_view
@@ -311,6 +337,104 @@ def logout():
 def dashboard():
     """Área privada acessível exclusivamente por usuários autenticados."""
     return render_template("dashboard.html", user=g.user)
+
+
+@app.route("/admin")
+@admin_required
+def admin():
+    """Área administrativa restrita exclusivamente a administradores (RBAC)."""
+    # Consulta via SQLAlchemy ORM; o ORM e o uso de consultas parametrizadas
+    # mitigam injeção de SQL ao evitar concatenação direta de entradas em comandos SQL.
+    users = db.session.execute(
+        db.select(User).order_by(User.id.asc())
+    ).scalars().all()
+
+    return render_template("admin.html", users=users)
+
+
+@app.route("/admin/users/<int:user_id>/promote", methods=["POST"])
+@admin_required
+def promote_user(user_id: int):
+    """Promove um usuário comum para a função de administrador."""
+    # 1. Validação obrigatória do token CSRF em tempo constante
+    csrf_token_received = request.form.get("csrf_token")
+    if not validate_csrf_token(csrf_token_received):
+        flash("Requisição inválida ou token de segurança expirado.", "error")
+        return redirect(url_for("admin"))
+
+    # 2. Localização segura do usuário via ORM
+    target_user = db.session.get(User, user_id)
+    if target_user is None:
+        flash("Usuário não encontrado.", "error")
+        return redirect(url_for("admin"))
+
+    # 3. Verificação de estado redundante
+    if target_user.is_admin:
+        flash(f"O usuário '{target_user.username}' já é um administrador.", "error")
+        return redirect(url_for("admin"))
+
+    # 4. Alteração estrita do privilégio exclusivamente pelo backend
+    target_user.is_admin = True
+    try:
+        db.session.commit()
+        flash(
+            f"Usuário '{target_user.username}' promovido a administrador com sucesso.",
+            "success",
+        )
+    except Exception:
+        db.session.rollback()
+        flash("Erro ao atualizar privilégios do usuário. Tente novamente.", "error")
+
+    return redirect(url_for("admin"))
+
+
+@app.route("/admin/users/<int:user_id>/demote", methods=["POST"])
+@admin_required
+def demote_user(user_id: int):
+    """Revoga o privilégio administrativo de um administrador (exceto o próprio)."""
+    # 1. Validação obrigatória do token CSRF em tempo constante
+    csrf_token_received = request.form.get("csrf_token")
+    if not validate_csrf_token(csrf_token_received):
+        flash("Requisição inválida ou token de segurança expirado.", "error")
+        return redirect(url_for("admin"))
+
+    # 2. Localização segura do usuário via ORM
+    target_user = db.session.get(User, user_id)
+    if target_user is None:
+        flash("Usuário não encontrado.", "error")
+        return redirect(url_for("admin"))
+
+    # 3. Proteção contra auto-revogação (impede bloqueio do administrador ativo)
+    if target_user.id == g.user.id:
+        flash(
+            "Operação negada: você não pode remover seu próprio privilégio de administrador.",
+            "error",
+        )
+        return redirect(url_for("admin"))
+
+    # 4. Verificação de estado redundante
+    if not target_user.is_admin:
+        flash(
+            f"O usuário '{target_user.username}' não possui privilégios de administrador.",
+            "error",
+        )
+        return redirect(url_for("admin"))
+
+    # 5. Alteração estrita do privilégio exclusivamente pelo backend
+    target_user.is_admin = False
+    try:
+        db.session.commit()
+        flash(
+            f"Privilégio de administrador revogado para '{target_user.username}'.",
+            "success",
+        )
+    except Exception:
+        db.session.rollback()
+        flash("Erro ao atualizar privilégios do usuário. Tente novamente.", "error")
+
+    return redirect(url_for("admin"))
+
+
 
 
 if __name__ == "__main__":

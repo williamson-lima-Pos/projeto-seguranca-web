@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área Administrativa - Projeto Segurança Web</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="container container-admin">
+        <h1>Área Administrativa</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="admin-header-card">
+            <p>Administrador conectado: <strong>{{ g.user.username }}</strong></p>
+        </div>
+
+        <div class="table-container">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome de Usuário</th>
+                        <th>Privilégio</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                        <tr>
+                            <td>#{{ u.id }}</td>
+                            <td>{{ u.username }}</td>
+                            <td>
+                                {% if u.is_admin %}
+                                    <span class="badge-admin">Administrador</span>
+                                {% else %}
+                                    <span class="badge-user">Usuário</span>
+                                {% endif %}
+                            </td>
+                            <td class="table-actions">
+                                {% if u.id == g.user.id %}
+                                    <!-- Administrador ativo: protegido contra auto-revogação -->
+                                    <span class="badge-self">Sua Conta</span>
+                                {% elif u.is_admin %}
+                                    <!-- Revogar privilégio administrativo de outro usuário -->
+                                    <form method="POST" action="{{ url_for('demote_user', user_id=u.id) }}" class="inline-form">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn-action btn-action-danger">Revogar Admin</button>
+                                    </form>
+                                {% else %}
+                                    <!-- Promover usuário comum para administrador -->
+                                    <form method="POST" action="{{ url_for('promote_user', user_id=u.id) }}" class="inline-form">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn-action btn-action-primary">Promover a Admin</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="actions">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Voltar ao Dashboard</a>
+        </div>
+
+        <div class="form-footer">
+            <a href="{{ url_for('index') }}" class="link-secondary">Página Inicial</a>
+        </div>
+    </main>
+</body>
+</html>

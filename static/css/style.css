@@ -294,3 +294,142 @@ h1 {
     color: var(--text-primary);
 }
 
+/* Área Administrativa */
+.container-admin {
+    max-width: 780px;
+}
+
+.admin-header-card {
+    background: rgba(10, 15, 29, 0.6);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-top: 1.25rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.admin-table th {
+    background: rgba(15, 23, 42, 0.9);
+    color: #94a3b8;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.admin-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+    background: rgba(56, 189, 248, 0.05);
+}
+
+.table-actions {
+    white-space: nowrap;
+}
+
+.inline-form {
+    display: inline-block;
+    margin: 0;
+}
+
+.btn-action {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+.btn-action-primary {
+    background: linear-gradient(135deg, #0284c7, #38bdf8);
+    color: #0a0f1d;
+}
+
+.btn-action-primary:hover {
+    background: linear-gradient(135deg, #0369a1, #0ea5e9);
+    box-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
+    transform: translateY(-1px);
+}
+
+.btn-action-danger {
+    background: rgba(239, 68, 68, 0.15);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+}
+
+.btn-action-danger:hover {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: #ef4444;
+    color: #ffffff;
+    box-shadow: 0 2px 10px rgba(239, 68, 68, 0.3);
+    transform: translateY(-1px);
+}
+
+.badge-admin {
+    display: inline-block;
+    background: rgba(14, 165, 233, 0.15);
+    border: 1px solid rgba(14, 165, 233, 0.4);
+    color: var(--text-accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+}
+
+.badge-user {
+    display: inline-block;
+    background: rgba(148, 163, 184, 0.1);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    color: #94a3b8;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+}
+
+.badge-self {
+    display: inline-block;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    color: #a5b4fc;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+}
+
+.admin-access-block {
+    margin-bottom: 0.75rem;
+}
+
+
+
