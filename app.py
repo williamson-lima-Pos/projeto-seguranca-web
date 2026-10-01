@@ -329,7 +329,7 @@ def logout():
     # Limpeza total da sessão do usuário
     session.clear()
     flash("Sessão encerrada com sucesso.", "success")
-    return redirect(url_for("login"))
+    return redirect(url_for("index"))
 
 
 @app.route("/dashboard")
