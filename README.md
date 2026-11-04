@@ -84,31 +84,70 @@ no bloqueio da publicação acidental de segredos.
 
 ## Itens do OWASP Top 10:2025 mitigados
 
-- A01 — Broken Access Control
-Controle de usuários, @login_required, @admin_required, permissões administrativas e proteção CSRF
+### A01 — Broken Access Control - Controle de usuários, @login_required, @admin_required, permissões administrativas e proteção CSRF
 
-- A02 — Security Misconfiguration
-Hardening SSH, firewall, cabeçalhos HTTP, configurações por variáveis de ambiente e Fail2Ban
+A aplicação implementa controle de acesso baseado em perfis (RBAC — Role-Based Access Control), distinguindo usuários comuns e administradores por meio do atributo is_admin, definido no arquivo app.py, linha 73.
 
-- A03 — Software Supply Chain Failures
-Dependabot, monitoramento de dependências, requirements.txt e GitHub Actions
+A autenticação e a autorização são verificadas no servidor por meio dos decoradores login_required (app.py, linhas 148–158) e admin_required (app.py, linhas 161–184). O acesso administrativo é condicionado à existência de uma sessão autenticada e à confirmação do privilégio administrativo, sendo negado aos usuários comuns por meio da resposta HTTP 403 (Forbidden).
 
-- A04 — Cryptographic Failures
-Hash de senhas com scrypt, HTTPS/TLS e configuração de certificados
+As rotas de administração e gerenciamento de privilégios são protegidas pelo decorador @admin_required, conforme demonstrado nas linhas 342–343, 355–356 e 391–392 do arquivo app.py.
 
-- A05 — Injection
-SQLAlchemy ORM, consultas parametrizadas e testes contra SQL Injection
+Adicionalmente, novos usuários são cadastrados sem privilégios administrativos, conforme as linhas 244–245 do arquivo app.py, mitigando a atribuição indevida de permissões elevadas.
 
-- A06 — Insecure Design
-Separação de perfis, política de senhas, validação de entradas e proteção de sessões
+### A02 — Security Misconfiguration - Hardening SSH, firewall, cabeçalhos HTTP, configurações por variáveis de ambiente e Fail2Ban
 
-- A07 — Authentication Failures
-Login, logout, hash de senhas, validação de credenciais e gerenciamento de sessão
+A aplicação e sua infraestrutura incorporam medidas de configuração segura destinadas à redução da superfície de ataque e à mitigação de configurações inadequadas.
 
-- A08 — Software or Data Integrity Failures
-Versionamento Git, proteção do repositório e fluxo controlado de implantação
+No código-fonte, arquivo app.py, destacam-se a configuração de atributos de segurança dos cookies de sessão (linhas 26–34), a definição do tempo de expiração das sessões permanentes (linhas 36–37) e a aplicação de cabeçalhos HTTP de segurança (linhas 187–193). Também foram implementados mecanismos de carregamento da chave secreta por variável de ambiente (linhas 14–18) e controle do modo de depuração (linhas 440–443).
 
-- A09 — Security Logging & Alerting Failures (parcial)
-acesso seguro encriptografado. Não tem a função de alertas
+Na infraestrutura, foram configurados mecanismos de filtragem de tráfego de rede, restrições de autenticação SSH, proteção contra tentativas repetidas de acesso, desativação de serviços desnecessários e comunicação HTTPS por meio do Nginx.
+
+### A04 — Cryptographic Failures - Hash de senhas com scrypt, HTTPS/TLS e configuração de certificados
+
+A aplicação implementa mecanismos de proteção criptográfica para senhas de usuários, utilizando as funções generate_password_hash e check_password_hash, disponibilizadas pela biblioteca Werkzeug.
+
+No arquivo app.py, o método set_password (linhas 118–123) realiza a validação da senha e gera seu hash antes do armazenamento. O método check_password (linhas 125–129) verifica as credenciais durante a autenticação, comparando a senha fornecida com o hash previamente armazenado. No ambiente de produção, foi identificado o uso do algoritmo scrypt.
+
+Na infraestrutura, a aplicação utiliza HTTPS com certificados digitais emitidos pela Let's Encrypt e gerenciamento de renovação por meio do Certbot. Também foi configurado um script para validar a configuração do Nginx antes de sua recarga após a renovação bem-sucedida do certificado.
+
+Essas medidas contribuem para proteger as credenciais armazenadas e a confidencialidade e integridade dos dados transmitidos entre o navegador e o servidor.
+
+### A05 — Injection - SQLAlchemy ORM, consultas parametrizadas e testes contra SQL Injection
+
+A aplicação implementa mecanismos de mitigação contra ataques de SQL Injection por meio da utilização do SQLAlchemy ORM (Object-Relational Mapping), responsável pela interação com o banco de dados SQLite.
+
+No arquivo app.py, as consultas realizadas durante o cadastro de usuários (linhas 235–238) e a autenticação (linhas 290–293) utilizam a construção db.select(User).filter_by(username=username), permitindo que os valores fornecidos pelos usuários sejam tratados como parâmetros, sem concatenação direta em instruções SQL.
+
+O mesmo padrão de acesso ao banco de dados é utilizado nas funcionalidades administrativas, incluindo a listagem de usuários (app.py, linhas 348–350), a promoção de privilégios (app.py, linhas 365–366) e sua revogação (app.py, linhas 401–402).
+
+Adicionalmente, a aplicação possui mecanismos de validação de entradas, contribuindo para restringir dados inválidos e reduzir riscos associados ao processamento de informações fornecidas pelos usuários.
+
+Essas medidas mitigam o risco de SQL Injection nas operações identificadas, embora não substituam a necessidade de testes de segurança e revisão de eventuais consultas SQL executadas diretamente.
+
+### A06 — Insecure Design - Separação de perfis, política de senhas, validação de entradas e proteção de sessões
+
+O projeto incorporou princípios de segurança desde sua implementação, destacando-se a separação de responsabilidades, a atribuição de privilégios mínimos e a adoção de políticas de autenticação e autorização.
+
+Na aplicação Flask, o controle de acesso baseado em perfis é implementado por meio do atributo is_admin (app.py, linha 73), dos mecanismos de autenticação e autorização (app.py, linhas 135–184) e da atribuição de privilégios comuns aos novos usuários (app.py, linhas 244–245).
+
+Também foram implementadas validações de credenciais e mecanismos de gerenciamento de sessões, incluindo a definição de tempo de expiração de 30 minutos para sessões permanentes (app.py, linhas 36–37).
+
+Na infraestrutura Ubuntu, foram estabelecidas contas distintas para administração e atividades de desenvolvimento, além de uma identidade específica para execução do serviço da aplicação, contribuindo para a segregação de responsabilidades.
+
+### A07 — Authentication Failures - Login, logout, hash de senhas, validação de credenciais e gerenciamento de sessão (Parcial)
+
+A aplicação Flask implementa mecanismos de autenticação e proteção de credenciais, incluindo política de validação de senhas, geração de hashes com o algoritmo scrypt e verificação das credenciais fornecidas pelos usuários.
+
+No arquivo app.py, destacam-se os métodos de geração e verificação dos hashes de senha (linhas 118–129), a validação de credenciais durante o login (linhas 290–300), a limpeza da sessão anterior à autenticação (linha 303) e o armazenamento do identificador do usuário na sessão (linha 309).
+
+Também foram implementados mecanismos de proteção de cookies no arquivo app.py, incluindo os atributos HttpOnly (linha 28), SameSite=Lax (linha 31) e configuração condicional de Secure (linha 34). As sessões permanentes possuem tempo de expiração configurado em 30 minutos (linha 37), e o encerramento da sessão é realizado pela funcionalidade de logout (linhas 320–332).
+
+Entretanto, a aplicação ainda não possui implementação comprovada de autenticação multifator, limitação de tentativas de login ou mecanismos específicos de proteção contra ataques de força bruta e credential stuffing.
+
+Dessa forma, o A07 é classificado como parcialmente implementado, com controles efetivos no código-fonte e oportunidades de aprimoramento na proteção contra ataques automatizados às credenciais.
+
+### A09 — Security Logging & Alerting Failures (parcial) - acesso seguro encriptografado. Não tem a função de alertas
+
+autenticação segura por login e senha, no arquivo app.py nas linhas 125–129, 290–312 e 335–339
 
 
